@@ -2,6 +2,7 @@
 // Created by G.F. Duivesteijn on 08/10/2018.
 //
 
+#include <algorithm>
 #include "ofxGFNet.h"
 
 
@@ -35,52 +36,45 @@ void gf::dnn::Net::readNet(const std::string &graph_file_name) {
 }
 
 
-tensorflow::Tensor gf::dnn::Net::tensorFromCvImage(
-        const cv::Mat &image,
-        const double scale,
-        const cv::Size size,
-        const int channels) {
-    tensorflow::TensorShape shape = tensorflow::TensorShape({static_cast<int64>(1), size.height, size.width, channels});
-    tensorflow::Tensor input_tensor(tensorflow::DT_FLOAT, shape);
-    auto input_tensor_mapped = input_tensor.tensor<float, 4>();
+tensorflow::Tensor gf::dnn::Net::tensorFromCvImage(const cv::Mat &image, const double scale, const cv::Size size,
+        const int channels, const cv::Scalar mean, bool swapRB, bool crop, int ddepth) {
 
-    cv::Mat img_norm = image * scale;
-    img_norm = img_norm - 1.0;
-
-    const int _rows = img_norm.rows;
-    const int _cols = img_norm.cols;
-    const int _channels = img_norm.channels();
-
-    const float *data = (float *) img_norm.data;
-    int N = 0;
-    for (int H = 0; H < _rows; ++H) {
-        for (int W = 0; W < _cols; ++W) {
-            for (int C = 0; C < _channels; ++C) {
-                input_tensor_mapped(N, H, W, C) = *(data + (H * _cols + W) * _channels + C);
-            }
-        }
-    }
-
-    ofLogVerbose("tensorFromCvImage") << input_tensor.DebugString() << std::endl;
-    return input_tensor;
+    std::vector<cv::Mat> images(1, image);
+    return tensorFromCvImages(images, scale, size, channels, mean, swapRB, crop, ddepth);
 }
 
 
-tensorflow::Tensor gf::dnn::Net::tensorFromCvImages(
-        const std::vector<cv::Mat> &images,
-        const double scale,
-        const cv::Size size,
-        const int channels) {
+tensorflow::Tensor gf::dnn::Net::tensorFromCvImages(std::vector<cv::Mat> images, const double scale,
+        cv::Size size, const int channels, const cv::Scalar mean, bool swapRB, bool crop, int ddepth) {
 
-    tensorflow::TensorShape shape = tensorflow::TensorShape({static_cast<int64>(images.size()), size.height, size.width, channels});
+    CV_Assert(!images.empty());
+    for (int i = 0; i < images.size(); i++) {
+        cv::Size imgSize = images[i].size();
+        if (size == cv::Size()) {
+            size = imgSize;
+        }
+        if (size != imgSize) {
+            resize(images[i], images[i], size, 0, 0, cv::INTER_LINEAR);
+        }
+        if(images[i].depth() == CV_8U && ddepth == CV_32F)
+            images[i].convertTo(images[i], CV_32F);
+//        if (swapRB)
+//            std::swap(mean[0], mean[2]);
+
+        images[i] -= mean;
+        images[i] *= scale;
+    }
+
+    tensorflow::TensorShape shape = tensorflow::TensorShape({static_cast<int64>(images.size()), size.height, size.width,
+            channels});
     tensorflow::Tensor input_tensor(tensorflow::DT_FLOAT, shape);
     auto input_tensor_mapped = input_tensor.tensor<float, 4>();
 
     int N = 0;
     for (auto &image: images) {
         cv::Mat img_norm = image * scale;
-        img_norm = img_norm - 1.0;
-        
+        img_norm = img_norm - mean;
+
         const int _rows = img_norm.rows;
         const int _cols = img_norm.cols;
         const int _channels = img_norm.channels();
