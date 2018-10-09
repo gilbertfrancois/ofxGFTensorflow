@@ -18,7 +18,7 @@ There is another excellent project ofxMSATensorflow by Memo Akten. Please have a
 
 
 
-## Installation [the easy way]
+## Installation
 
 - Go to the [release](https://github.com/gilbertfrancois/ofxGFTensorflow/releases) page and download a stable version of the source _or_ type  `git clone https://github.com/gilbertfrancois/ofxGFTensorflow.git` to install this repo inside your `${openframeworks_dir}/addons` folder.
 - Download the precompiled Tensorflow C++ libraries for your operating system from the [release](https://github.com/gilbertfrancois/ofxGFTensorflow/releases) page and unzip the archive with headers and libraries.
