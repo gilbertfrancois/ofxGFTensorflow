@@ -2,7 +2,6 @@
 // Created by G.F. Duivesteijn on 08/10/2018.
 //
 
-#include <algorithm>
 #include "ofxGFNet.h"
 
 
@@ -36,16 +35,16 @@ void gf::dnn::Net::readNet(const std::string &graph_file_name) {
 }
 
 
-tensorflow::Tensor gf::dnn::Net::tensorFromCvImage(const cv::Mat &image, const double scale, const cv::Size size,
-        const int channels, const cv::Scalar mean, bool swapRB, bool crop, int ddepth) {
+tensorflow::Tensor gf::dnn::Net::tensorFromCvImage(cv::Mat image, const double scale, const cv::Size size,
+        const int channels, const cv::Scalar &mean_, bool swapRB, bool crop, int ddepth) {
 
     std::vector<cv::Mat> images(1, image);
-    return tensorFromCvImages(images, scale, size, channels, mean, swapRB, crop, ddepth);
+    return tensorFromCvImages(images, scale, size, channels, mean_, swapRB, crop, ddepth);
 }
 
 
 tensorflow::Tensor gf::dnn::Net::tensorFromCvImages(std::vector<cv::Mat> images, const double scale,
-        cv::Size size, const int channels, const cv::Scalar mean, bool swapRB, bool crop, int ddepth) {
+        cv::Size size, const int channels, const cv::Scalar &mean_, bool swapRB, bool crop, int ddepth) {
 
     CV_Assert(!images.empty());
     for (int i = 0; i < images.size(); i++) {
@@ -58,8 +57,9 @@ tensorflow::Tensor gf::dnn::Net::tensorFromCvImages(std::vector<cv::Mat> images,
         }
         if(images[i].depth() == CV_8U && ddepth == CV_32F)
             images[i].convertTo(images[i], CV_32F);
-//        if (swapRB)
-//            std::swap(mean[0], mean[2]);
+        cv::Scalar mean = mean_;
+        if (swapRB)
+            std::swap(mean[0], mean[2]);
 
         images[i] -= mean;
         images[i] *= scale;
@@ -72,14 +72,10 @@ tensorflow::Tensor gf::dnn::Net::tensorFromCvImages(std::vector<cv::Mat> images,
 
     int N = 0;
     for (auto &image: images) {
-        cv::Mat img_norm = image * scale;
-        img_norm = img_norm - mean;
-
-        const int _rows = img_norm.rows;
-        const int _cols = img_norm.cols;
-        const int _channels = img_norm.channels();
-        
-        const float *data = (float *) img_norm.data;
+        const int _rows = image.rows;
+        const int _cols = image.cols;
+        const int _channels = image.channels();
+        const float *data = (float *) image.data;
         for (int H = 0; H < _rows; ++H) {
             for (int W = 0; W < _cols; ++W) {
                 for (int C = 0; C < _channels; ++C) {
@@ -89,7 +85,6 @@ tensorflow::Tensor gf::dnn::Net::tensorFromCvImages(std::vector<cv::Mat> images,
         }
         N++;
     }
-    ofLogVerbose("tensorFromCvImages") << input_tensor.DebugString() << std::endl;
     return input_tensor;
 }
 
@@ -115,3 +110,15 @@ std::vector<tensorflow::Tensor> gf::dnn::Net::forward(
     }
     return outputs;
 }
+
+//       // allocate a Tensor
+//       Tensor inputImg(DT_FLOAT, TensorShape({1,inputHeight,inputWidth,3}));
+//
+//       // get pointer to memory for that Tensor
+//       float *p = inputImg.flat<float>().data();
+//       // create a "fake" cv::Mat from it
+//       cv::Mat cameraImg(inputHeight, inputWidth, CV_32FC3, p);
+//
+//       // use it here as a destination
+//       cv::Mat imagePixels = ...; // get data from your video pipeline
+//       imagePixels.convertTo(cameraImg, CV_32FC3);
