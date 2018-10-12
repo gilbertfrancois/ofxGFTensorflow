@@ -110,15 +110,3 @@ std::vector<tensorflow::Tensor> gf::dnn::Net::forward(
     }
     return outputs;
 }
-
-//       // allocate a Tensor
-//       Tensor inputImg(DT_FLOAT, TensorShape({1,inputHeight,inputWidth,3}));
-//
-//       // get pointer to memory for that Tensor
-//       float *p = inputImg.flat<float>().data();
-//       // create a "fake" cv::Mat from it
-//       cv::Mat cameraImg(inputHeight, inputWidth, CV_32FC3, p);
-//
-//       // use it here as a destination
-//       cv::Mat imagePixels = ...; // get data from your video pipeline
-//       imagePixels.convertTo(cameraImg, CV_32FC3);
