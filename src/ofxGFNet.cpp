@@ -13,6 +13,7 @@ gf::dnn::Net::~Net() {
     if (session != nullptr) {
         session->Close();
     }
+    delete session;
 }
 
 void gf::dnn::Net::readNet(const std::string &graph_file_name) {
@@ -34,35 +35,49 @@ void gf::dnn::Net::readNet(const std::string &graph_file_name) {
     }
 }
 
+tensorflow::Tensor gf::dnn::Net::tensorFromCvImageFast(cv::Mat image, const double scale, const cv::Size size, const int channels, const cv::Scalar &mean, bool swapRB, bool crop, int ddepth) {
 
-tensorflow::Tensor gf::dnn::Net::tensorFromCvImage(cv::Mat image, const double scale, const cv::Size size,
-        const int channels, const cv::Scalar &mean_, bool swapRB, bool crop, int ddepth) {
+    const auto n_elements_per_image = size.height * size.width * channels;
 
-    std::vector<cv::Mat> images(1, image);
-    return tensorFromCvImages(images, scale, size, channels, mean_, swapRB, crop, ddepth);
+    tensorflow::TensorShape shape = tensorflow::TensorShape({1, size.height, size.width, channels});
+    tensorflow::Tensor _tensor(tensorflow::DT_FLOAT, shape);
+    auto _tensor_ptr = _tensor.flat<float>().data();
+
+    image = preprocess(image, scale, size, mean, swapRB, ddepth);
+    auto _image_ptr = (float *) image.data;
+
+    std::memcpy(_tensor_ptr, _image_ptr, n_elements_per_image * sizeof(float));
+
+    return _tensor;
 }
 
+tensorflow::Tensor gf::dnn::Net::tensorFromCvImagesFast(std::vector<cv::Mat> images, const double scale, const cv::Size size, const int channels, const cv::Scalar &mean, bool swapRB, bool crop, int ddepth) {
 
-tensorflow::Tensor gf::dnn::Net::tensorFromCvImages(std::vector<cv::Mat> images, const double scale,
-        cv::Size size, const int channels, const cv::Scalar &mean_, bool swapRB, bool crop, int ddepth) {
+    const auto n_elements_per_image = size.height * size.width * channels;
+
+    tensorflow::TensorShape _tensor_shape = tensorflow::TensorShape({static_cast<int64>(images.size()), size.height, size.width, channels});
+    tensorflow::Tensor _tensor(tensorflow::DT_FLOAT, _tensor_shape);
+    auto _tensor_ptr = _tensor.flat<float>().data();
+
+    for (int i = 0; i < images.size(); i++) {
+        images[i] = preprocess(images[i], scale, size, mean, swapRB, ddepth);
+        auto _image_ptr = (float *) images[i].data;
+        std::memcpy(_tensor_ptr + i * n_elements_per_image, _image_ptr, n_elements_per_image * sizeof(float));
+    }
+    return _tensor;
+}
+
+tensorflow::Tensor gf::dnn::Net::tensorFromCvImage(cv::Mat image, const double scale, const cv::Size size, const int channels, const cv::Scalar &mean, bool swapRB, bool crop, int ddepth) {
+
+    std::vector<cv::Mat> images(1, image);
+    return tensorFromCvImages(images, scale, size, channels, mean, swapRB, crop, ddepth);
+}
+
+tensorflow::Tensor gf::dnn::Net::tensorFromCvImages(std::vector<cv::Mat> images, const double scale, cv::Size size, const int channels, const cv::Scalar &mean, bool swapRB, bool crop, int ddepth) {
 
     CV_Assert(!images.empty());
     for (int i = 0; i < images.size(); i++) {
-        cv::Size imgSize = images[i].size();
-        if (size == cv::Size()) {
-            size = imgSize;
-        }
-        if (size != imgSize) {
-            resize(images[i], images[i], size, 0, 0, cv::INTER_LINEAR);
-        }
-        if(images[i].depth() == CV_8U && ddepth == CV_32F)
-            images[i].convertTo(images[i], CV_32F);
-        cv::Scalar mean = mean_;
-        if (swapRB)
-            std::swap(mean[0], mean[2]);
-
-        images[i] -= mean;
-        images[i] *= scale;
+        images[i] = preprocess(images[i], scale, size, mean, swapRB, ddepth);
     }
 
     tensorflow::TensorShape shape = tensorflow::TensorShape({static_cast<int64>(images.size()), size.height, size.width,
@@ -109,4 +124,23 @@ std::vector<tensorflow::Tensor> gf::dnn::Net::forward(
         std::cout << status.ToString() << std::endl;
     }
     return outputs;
+}
+
+cv::Mat gf::dnn::Net::preprocess(const cv::Mat &src, const double scale, const cv::Size &size, const cv::Scalar &mean, bool swapRB, int ddepth) {
+    cv::Mat dst = src.clone();
+    cv::Size _image_size = dst.size();
+    if (size != _image_size) {
+        resize(dst, dst, size, 0, 0, cv::INTER_LINEAR);
+    }
+    if (dst.depth() == CV_8U && ddepth == CV_32F)
+        dst.convertTo(dst, CV_32F);
+    cv::Scalar _mean = mean;
+    if (swapRB) {
+        std::swap(_mean[0], _mean[2]);
+        cvtColor(dst, dst, cv::COLOR_BGR2RGB);
+    }
+
+    dst -= _mean;
+    dst *= scale;
+    return dst;
 }

@@ -29,6 +29,7 @@ class Net {
 private:
     tensorflow::Session *session;
 
+    cv::Mat preprocess(const cv::Mat &src, const double scale, const cv::Size &size, const cv::Scalar &mean, bool swapRB, int ddepth);
 
 public:
 
@@ -38,9 +39,13 @@ public:
 
     void readNet(const std::string &graph_file_name);
 
-    tensorflow::Tensor tensorFromCvImage(cv::Mat image, const double scale, const cv::Size size, const int channels, const cv::Scalar &mean_, bool swapRB, bool crop, int ddepth);
+    tensorflow::Tensor tensorFromCvImageFast(cv::Mat image, const double scale, const cv::Size size, const int channels, const cv::Scalar &mean, bool swapRB, bool crop, int ddepth);
 
-    tensorflow::Tensor tensorFromCvImages(std::vector<cv::Mat> images, const double scale, cv::Size size, const int channels, const cv::Scalar &mean_, bool swapRB, bool crop, int ddepth);
+    tensorflow::Tensor tensorFromCvImagesFast(std::vector<cv::Mat> images, const double scale, const cv::Size size, const int channels, const cv::Scalar &mean, bool swapRB, bool crop, int ddepth);
+
+    tensorflow::Tensor tensorFromCvImage(cv::Mat image, const double scale_, const cv::Size size_, const int channels_, const cv::Scalar &mean, bool swapRB, bool crop, int ddepth);
+
+    tensorflow::Tensor tensorFromCvImages(std::vector<cv::Mat> images, const double scale, cv::Size size, const int channels, const cv::Scalar &mean, bool swapRB, bool crop, int ddepth);
 
     std::vector<tensorflow::Tensor> forward(tensorflow::Tensor input_tensor, const std::string &input_layer_name, const std::string &output_layer_name);
 
