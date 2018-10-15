@@ -18,62 +18,30 @@ meta:
 	ADDON_NAME = ofxGFTensorflow
 	ADDON_DESCRIPTION = openFrameworks addon for running pre-trained Tensorflow models, using the Tensorflow C++ library.
 	ADDON_AUTHOR = Gilbert Francois Duivesteijn
-	ADDON_TAGS = "numerical computation" "machine learning" "artificial intelligence" "deep learning"
+	ADDON_TAGS = "deep learning" "machine learning" "numerical computation" "artificial intelligence" "tensorflow"
 	ADDON_URL = https://github.com/gilbertfrancois/ofxGFTensorflow
 
 common:
 	# dependencies with other addons, a list of them separated by spaces
 	# or use += in several lines
-	ADDON_DEPENDENCIES = ofxCv ofxOpenCv
+	ADDON_DEPENDENCIES  = ofxCv
+	ADDON_DEPENDENCIES += ofxOpenCv
 
-	# include search paths, this will be usually parsed from the file system
-	# but if the addon or addon libraries need special search paths they can be
-	# specified here separated by spaces or one per line using +=
-				ADDON_INCLUDES = src
-				ADDON_INCLUDES += libs/tensorflow/include
-				ADDON_INCLUDES += libs/tensorflow/include/external/nsync
-				ADDON_INCLUDES += libs/google/include
+    ADDON_INCLUDES = src
+    ADDON_INCLUDES += libs/tensorflow/include
+    ADDON_INCLUDES += libs/tensorflow/include/external/nsync
+    ADDON_INCLUDES += libs/google/include
 
-	# the last one is different every time the lib is compiled
-	# need to find a fix
-
-
-	# any special flag that should be passed to the compiler when using this
-	# addon
-	# ADDON_CFLAGS =
-
-	# any special flag that should be passed to the linker when using this
-	# addon, also used for system libraries with -lname
-				# ADDON_LDFLAGS =
-
-	# linux only, any library that should be included in the project using
-	# pkg-config
-	# ADDON_PKG_CONFIG_LIBRARIES =
-
-	# osx/iOS only, any framework that should be included in the project
-	# ADDON_FRAMEWORKS =
-
-	# source files, these will be usually parsed from the file system looking
-	# in the src folders in libs and the root of the addon. if your addon needs
-	# to include files in different places or a different set of files per platform
-	# they can be specified here
-	# ADDON_SOURCES =
-
-	# some addons need resources to be copied to the bin/data folder of the project
-	# specify here any files that need to be copied, you can use wildcards like * and ?
-	# ADDON_DATA =
-
-	# when parsing the file system looking for sources exclude this for all or
-	# a specific platform
 	ADDON_SOURCES_EXCLUDE = libs/%
 
-	# when parsing the file system looking for libraries exclude this for all or
-	# a specific platform
-	# ADDON_LIBS_EXCLUDE =
-
 linux64:
+	ADDON_LDFLAGS = ${OF_ROOT}/addons/ofxGFTensorflow/libs/lib/linux/libtensorflow_cc.so
+	ADDON_LDFLAGS += -Wl,-rpath=${OF_ROOT}/addons/ofxGFTensorflow/libs/lib/linux
 
 linux:
+	ADDON_LDFLAGS = ${OF_ROOT}/addons/ofxGFTensorflow/libs/lib/linux/libtensorflow_cc.so
+	ADDON_LDFLAGS += -Wl,-rpath=${OF_ROOT}/addons/ofxGFTensorflow/libs/lib/linux
+
 
 linuxarmv6l:
 
@@ -88,3 +56,4 @@ android/armeabi-v7a:
 ios:
 
 osx:
+    #ADDON_LDFLAGS = -Xlinker -rpath -Xlinker @executable_path
