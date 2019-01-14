@@ -27,16 +27,17 @@ common:
 	ADDON_DEPENDENCIES  = ofxCv
 	ADDON_DEPENDENCIES += ofxOpenCv
 
-    ADDON_INCLUDES = src
-    ADDON_INCLUDES += libs/tensorflow/include
-    ADDON_INCLUDES += libs/tensorflow/include/external/nsync
-    ADDON_INCLUDES += libs/google/include
+	ADDON_INCLUDES = src
+	ADDON_INCLUDES += libs/tensorflow/include
+	ADDON_INCLUDES += libs/tensorflow/include/external/nsync
+	ADDON_INCLUDES += libs/protobuf/include
+	ADDON_INCLUDES += libs/google/include
 
 	ADDON_SOURCES_EXCLUDE = libs/%
 
 linux64:
-	ADDON_LDFLAGS = ${OF_ROOT}/addons/ofxGFTensorflow/libs/lib/linux/libtensorflow_cc.so
-	ADDON_LDFLAGS += -Wl,-rpath=${OF_ROOT}/addons/ofxGFTensorflow/libs/lib/linux
+	ADDON_LDFLAGS = ${OF_ROOT}/addons/ofxGFTensorflow/libs/tensorflow/lib/linux64/libtensorflow_cc.so
+#	ADDON_LDFLAGS += -Wl,-rpath=${OF_ROOT}/addons/ofxGFTensorflow/libs/tensorflow/lib/linux64/lib/linux
 
 linux:
 	ADDON_LDFLAGS = ${OF_ROOT}/addons/ofxGFTensorflow/libs/lib/linux/libtensorflow_cc.so
@@ -56,4 +57,5 @@ android/armeabi-v7a:
 ios:
 
 osx:
-    #ADDON_LDFLAGS = -Xlinker -rpath -Xlinker @executable_path
+    ADDON_LIBS = ${OF_ROOT}/addons/ofxGFTensorflow/libs/lib/osx/libtensorflow_cc.so
+	#ADDON_LDFLAGS = -Xlinker -rpath -Xlinker @executable_path
